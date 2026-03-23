@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gravel Crew v1.5 - Master</title>
+    <style>
+        :root { --bg: #0a0a0a; --accent: #ff5500; --msg: #00ff41; --panel: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; box-sizing: border-box; overflow-x: hidden; }
+        #display-box { border: 2px solid var(--accent); border-radius: 15px; padding: 20px; margin-bottom: 15px; background: #000; }
+        .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .note-text { font-size: 3rem; font-weight: 900; color: var(--msg); min-height: 110px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; line-height: 1.1; }
+        .dist-val { font-size: 6rem; font-weight: bold; line-height: 1; margin: 10px 0; font-variant-numeric: tabular-nums; }
+        #progress-container { background: #333; height: 12px; border-radius: 6px; margin: 15px 0; overflow: hidden; }
+        #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; }
+        .control-group { background: var(--panel); padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+        input[type="range"] { width: 100%; height: 40px; }
+        button { width: 100%; padding: 18px; margin: 5px 0; font-size: 1.1rem; border-radius: 10px; border: none; font-weight: bold; text-transform: uppercase; }
+        .btn-load { background: #444; color: white; }
+        .btn-start { background: var(--msg); color: black; height: 80px; font-size: 1.5rem; }
+        .btn-skip { background: #333; color: #ff5500; border: 1px solid #ff5500; margin-top: 10px; }
+        #meta { font-size: 0.75rem; color: #555; margin-top: 15px; display: flex; justify-content: space-between; }
+        .acc-bad { color: #ff4444; }
+    </style>
+</head>
+<body>
+
+    <div id="display-box">
+        <div class="label">Next Note</div>
+        <div id="next-note" class="note-text">No File Loaded</div>
+        <div class="label">Meters to Trigger</div>
+        <div id="dist-display" class="dist-val">--</div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <div id="point-info" class="label">Point: 0 / 0</div>
+    </div>
+
+    <div class="control-group">
+        <div class="label">Voice Volume</div>
+        <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="1">
+        <button class="btn-skip" onclick="manualSkip()">Manual Skip Note ⏭️</button>
+    </div>
+
+    <input type="file" id="file-input" accept=".json" style="display:none">
+    <button class="btn-load" onclick="document.getElementById('file-input').click()">1. Load Stage</button>
+    <button id="start-btn" class="btn-start" onclick="startStage()" disabled>2. Start Stage</button>
+
+    <div id="meta">
+        <span>GPS Acc: <b id="acc">--</b>m</span>
+        <span>Lat/Lon: <b id="coords">--</b></span>
+    </div>
+
+<script>
+    let stage = [];
+    let idx = 0;
+    let currentVol = 1;
+    let lastDist = Infinity;
+    const RADIUS = 35; 
+    const CLOSE_ZONE = 50; // Zone where we watch for "increasing distance"
+    const TO_RAD = Math.PI / 180;
+    const R = 6371000; 
+    const synth = window.speechSynthesis;
+
+    document.getElementById('vol-slider').oninput = function() { currentVol = this.value; };
+
+    document.getElementById('file-input').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            stage = JSON.parse(event.target.result);
+            document.getElementById('next-note').innerText = "Ready: " + (stage[0].note || "Start");
+            document.getElementById('point-info').innerText = `Point: 1 / ${stage.length}`;
+            document.getElementById('start-btn').disabled = false;
+        };
+        reader.readAsText(e.target.files[0]);
+    };
+
+    function getDist(lat1, lon1, lat2, lon2) {
+        const φ1 = lat1 * TO_RAD;
+        const φ2 = lat2 * TO_RAD;
+        const Δφ = (lat2 - lat1) * TO_RAD;
+        const Δλ = (lon2 - lon1) * TO_RAD;
+        const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    function announce(txt) {
+        if (synth.speaking) synth.cancel();
+        const msg = new SpeechSynthesisUtterance(txt);
+        msg.volume = currentVol;
+        msg.rate = 1.4; 
+        synth.speak(msg);
+    }
+
+    function manualSkip() {
+        if (idx < stage.length) {
+            announce("Skipping to " + (stage[idx+1]?.note || "Next"));
+            idx++;
+            updateUI();
+        }
+    }
+
+    async function startStage() {
+        idx = 0;
+        document.getElementById('start-btn').innerText = "STAGE LIVE";
+        document.getElementById('start-btn').style.background = "#ffaa00";
+
+        if ('wakeLock' in navigator) {
+            try { await navigator.wakeLock.request('screen'); } catch (err) {}
+        }
+
+        navigator.geolocation.watchPosition((pos) => {
+            const { latitude: lat, longitude: lon, accuracy } = pos.coords;
+            const accEl = document.getElementById('acc');
+            accEl.innerText = accuracy.toFixed(1);
+            accEl.className = accuracy > 15 ? 'acc-bad' : '';
+            document.getElementById('coords').innerText = lat.toFixed(4) + "," + lon.toFixed(4);
+
+            if (idx < stage.length) {
+                const target = stage[idx];
+                const d = getDist(lat, lon, target.lat, (target.lng || target.lon));
+                
+                if (!isNaN(d)) {
+                    document.getElementById('dist-display').innerText = Math.round(d);
+                    
+                    // Logic: Trigger if inside radius OR if we were close but distance is now increasing
+                    if (d < RADIUS || (d < CLOSE_ZONE && d > lastDist)) {
+                        announce(stage[idx].note || "Next Point");
+                        idx++;
+                        lastDist = Infinity; // Reset for next point
+                        updateUI();
+                    } else {
+                        lastDist = d;
+                    }
+                }
+            }
+        }, (err) => console.error(err), { 
+            enableHighAccuracy: true, 
+            maximumAge: 0, 
+            timeout: 10000 
+        });
+    }
+
+    function updateUI() {
+        const pct = (idx / stage.length) * 100;
+        document.getElementById('progress-bar').style.width = pct + "%";
+        if (idx < stage.length) {
+            document.getElementById('next-note').innerText = stage[idx].note || "---";
+            document.getElementById('point-info').innerText = `Point: ${idx + 1} / ${stage.length}`;
+        } else {
+            document.getElementById('next-note').innerText = "FINISH";
+            document.getElementById('dist-display').innerText = "0";
+        }
+    }
+</script>
+</body>
+</html>
