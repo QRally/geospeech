@@ -2,117 +2,149 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gravel Crew v1.5 - Master</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gravel Crew v1.7 - MASTER</title>
     <style>
         :root { --bg: #0a0a0a; --accent: #ff5500; --msg: #00ff41; --panel: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; box-sizing: border-box; overflow-x: hidden; }
-        #display-box { border: 2px solid var(--accent); border-radius: 15px; padding: 20px; margin-bottom: 15px; background: #000; }
-        .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .note-text { font-size: 3rem; font-weight: 900; color: var(--msg); min-height: 110px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; line-height: 1.1; }
-        .dist-val { font-size: 6rem; font-weight: bold; line-height: 1; margin: 10px 0; font-variant-numeric: tabular-nums; }
-        #progress-container { background: #333; height: 12px; border-radius: 6px; margin: 15px 0; overflow: hidden; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #header { display: flex; justify-content: space-between; padding: 5px; font-size: 0.8rem; color: #666; flex-shrink: 0; }
+        
+        #timer-display { font-family: monospace; font-size: 2.5rem; color: var(--accent); margin: 5px 0; font-weight: bold; flex-shrink: 0; }
+
+        #display-box { border: 2px solid var(--accent); border-radius: 15px; padding: 15px; background: #000; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .note-text { font-size: 3.2rem; font-weight: 900; color: var(--msg); min-height: 100px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; line-height: 1; }
+        .dist-val { font-size: 5.5rem; font-weight: bold; line-height: 1; margin: 5px 0; font-variant-numeric: tabular-nums; }
+        
+        #progress-container { background: #333; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
         #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; }
-        .control-group { background: var(--panel); padding: 15px; border-radius: 10px; margin-bottom: 10px; }
-        input[type="range"] { width: 100%; height: 40px; }
-        button { width: 100%; padding: 18px; margin: 5px 0; font-size: 1.1rem; border-radius: 10px; border: none; font-weight: bold; text-transform: uppercase; }
+
+        .settings-panel { background: var(--panel); padding: 12px; border-radius: 10px; margin-bottom: 10px; text-align: left; flex-shrink: 0; }
+        .setting-row { margin-bottom: 8px; }
+        .setting-row label { display: block; font-size: 0.7rem; color: var(--accent); text-transform: uppercase; }
+        .val-label { float: right; color: #fff; }
+        input[type="range"] { width: 100%; height: 30px; accent-color: var(--accent); }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-shrink: 0; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .btn-load { background: #444; color: white; }
-        .btn-start { background: var(--msg); color: black; height: 80px; font-size: 1.5rem; }
-        .btn-skip { background: #333; color: #ff5500; border: 1px solid #ff5500; margin-top: 10px; }
-        #meta { font-size: 0.75rem; color: #555; margin-top: 15px; display: flex; justify-content: space-between; }
-        .acc-bad { color: #ff4444; }
+        .btn-start { background: var(--msg); color: black; height: 70px; font-size: 1.4rem; grid-column: span 2; }
+        .btn-test { background: #222; color: #888; border: 1px solid #333; font-size: 0.7rem; margin-top: 5px; }
+        
+        .acc-bad { color: #ff4444 !important; }
     </style>
 </head>
 <body>
 
+    <div id="header">
+        <span>GPS: <b id="acc">--</b>m</span>
+        <span id="point-info">Pt: 0/0</span>
+    </div>
+
+    <div id="timer-display">00:00.0</div>
+
     <div id="display-box">
         <div class="label">Next Note</div>
-        <div id="next-note" class="note-text">No File Loaded</div>
-        <div class="label">Meters to Trigger</div>
+        <div id="next-note" class="note-text">NO FILE</div>
+        <div class="label">Distance to Trigger</div>
         <div id="dist-display" class="dist-val">--</div>
         <div id="progress-container"><div id="progress-bar"></div></div>
-        <div id="point-info" class="label">Point: 0 / 0</div>
     </div>
 
-    <div class="control-group">
-        <div class="label">Voice Volume</div>
-        <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="1">
-        <button class="btn-skip" onclick="manualSkip()">Manual Skip Note ⏭️</button>
+    <div class="settings-panel">
+        <div class="setting-row">
+            <label>Co-Driver Speed <span id="speed-val" class="val-label">1.4x</span></label>
+            <input type="range" id="rate-slider" min="0.8" max="2.2" step="0.1" value="1.4">
+        </div>
+        <div class="setting-row">
+            <label>Voice Pitch <span id="pitch-val" class="val-label">1.0</span></label>
+            <input type="range" id="pitch-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+        </div>
+        <button class="btn-test" onclick="testAudio()">🔊 Test Voice</button>
     </div>
 
-    <input type="file" id="file-input" accept=".json" style="display:none">
-    <button class="btn-load" onclick="document.getElementById('file-input').click()">1. Load Stage</button>
-    <button id="start-btn" class="btn-start" onclick="startStage()" disabled>2. Start Stage</button>
-
-    <div id="meta">
-        <span>GPS Acc: <b id="acc">--</b>m</span>
-        <span>Lat/Lon: <b id="coords">--</b></span>
+    <div class="btn-group">
+        <input type="file" id="file-input" accept=".json" style="display:none">
+        <button class="btn-load" onclick="document.getElementById('file-input').click()">Load Stage</button>
+        <button class="btn-load" style="background:#222" onclick="toggleFullscreen()">Fullscreen</button>
+        <button id="start-btn" class="btn-start" onclick="startStage()" disabled>Start Stage</button>
     </div>
 
 <script>
     let stage = [];
     let idx = 0;
-    let currentVol = 1;
     let lastDist = Infinity;
+    let startTime = null;
+    let timerInterval = null;
+    
     const RADIUS = 35; 
-    const CLOSE_ZONE = 50; // Zone where we watch for "increasing distance"
-    const TO_RAD = Math.PI / 180;
-    const R = 6371000; 
+    const CLOSE_ZONE = 50;
+    const R = 6371000;
     const synth = window.speechSynthesis;
 
-    document.getElementById('vol-slider').oninput = function() { currentVol = this.value; };
-
+    // Load File
     document.getElementById('file-input').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
             stage = JSON.parse(event.target.result);
-            document.getElementById('next-note').innerText = "Ready: " + (stage[0].note || "Start");
-            document.getElementById('point-info').innerText = `Point: 1 / ${stage.length}`;
+            document.getElementById('next-note').innerText = stage[0].note || "READY";
+            document.getElementById('point-info').innerText = `Pt: 1/${stage.length}`;
             document.getElementById('start-btn').disabled = false;
         };
         reader.readAsText(e.target.files[0]);
     };
 
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+        else document.exitFullscreen();
+    }
+
     function getDist(lat1, lon1, lat2, lon2) {
-        const φ1 = lat1 * TO_RAD;
-        const φ2 = lat2 * TO_RAD;
-        const Δφ = (lat2 - lat1) * TO_RAD;
-        const Δλ = (lon2 - lon1) * TO_RAD;
-        const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
+        const rad = Math.PI / 180;
+        const dLat = (lat2 - lat1) * rad;
+        const dLon = (lon2 - lon1) * rad;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*rad) * Math.cos(lat2*rad) * Math.sin(dLon/2)**2;
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
     function announce(txt) {
         if (synth.speaking) synth.cancel();
         const msg = new SpeechSynthesisUtterance(txt);
-        msg.volume = currentVol;
-        msg.rate = 1.4; 
+        msg.rate = document.getElementById('rate-slider').value;
+        msg.pitch = document.getElementById('pitch-slider').value;
+        
+        const voices = synth.getVoices();
+        msg.voice = voices.find(v => v.lang.includes('en-GB')) || voices[0];
+        
         synth.speak(msg);
     }
 
-    function manualSkip() {
-        if (idx < stage.length) {
-            announce("Skipping to " + (stage[idx+1]?.note || "Next"));
-            idx++;
-            updateUI();
-        }
+    function testAudio() { announce("Left 6 into Right 5. Caution big jump."); }
+
+    function updateTimer() {
+        if (!startTime) return;
+        const now = new Date().getTime();
+        const diff = now - startTime;
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        const ms = Math.floor((diff % 1000) / 100);
+        document.getElementById('timer-display').innerText = 
+            `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}.${ms}`;
     }
 
     async function startStage() {
         idx = 0;
-        document.getElementById('start-btn').innerText = "STAGE LIVE";
+        document.getElementById('start-btn').innerText = "TRACKING LIVE";
         document.getElementById('start-btn').style.background = "#ffaa00";
-
-        if ('wakeLock' in navigator) {
-            try { await navigator.wakeLock.request('screen'); } catch (err) {}
-        }
+        if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(()=>{});
 
         navigator.geolocation.watchPosition((pos) => {
             const { latitude: lat, longitude: lon, accuracy } = pos.coords;
             const accEl = document.getElementById('acc');
             accEl.innerText = accuracy.toFixed(1);
-            accEl.className = accuracy > 15 ? 'acc-bad' : '';
-            document.getElementById('coords').innerText = lat.toFixed(4) + "," + lon.toFixed(4);
+            accEl.className = accuracy > 12 ? 'acc-bad' : '';
 
             if (idx < stage.length) {
                 const target = stage[idx];
@@ -121,35 +153,42 @@
                 if (!isNaN(d)) {
                     document.getElementById('dist-display').innerText = Math.round(d);
                     
-                    // Logic: Trigger if inside radius OR if we were close but distance is now increasing
                     if (d < RADIUS || (d < CLOSE_ZONE && d > lastDist)) {
-                        announce(stage[idx].note || "Next Point");
+                        // Start timer on first point
+                        if (idx === 0 && !startTime) {
+                            startTime = new Date().getTime();
+                            timerInterval = setInterval(updateTimer, 100);
+                        }
+                        
+                        announce(stage[idx].note);
                         idx++;
-                        lastDist = Infinity; // Reset for next point
+                        lastDist = Infinity;
                         updateUI();
                     } else {
                         lastDist = d;
                     }
                 }
+            } else {
+                clearInterval(timerInterval); // Stop timer at finish
             }
-        }, (err) => console.error(err), { 
-            enableHighAccuracy: true, 
-            maximumAge: 0, 
-            timeout: 10000 
-        });
+        }, null, { enableHighAccuracy: true, maximumAge: 0 });
     }
 
     function updateUI() {
         const pct = (idx / stage.length) * 100;
         document.getElementById('progress-bar').style.width = pct + "%";
         if (idx < stage.length) {
-            document.getElementById('next-note').innerText = stage[idx].note || "---";
-            document.getElementById('point-info').innerText = `Point: ${idx + 1} / ${stage.length}`;
+            document.getElementById('next-note').innerText = stage[idx].note;
+            document.getElementById('point-info').innerText = `Pt: ${idx + 1}/${stage.length}`;
         } else {
             document.getElementById('next-note').innerText = "FINISH";
             document.getElementById('dist-display').innerText = "0";
         }
     }
+
+    // UI Label Updates
+    document.getElementById('rate-slider').oninput = function() { document.getElementById('speed-val').innerText = this.value + "x"; };
+    document.getElementById('pitch-slider').oninput = function() { document.getElementById('pitch-val').innerText = this.value; };
 </script>
 </body>
 </html>
