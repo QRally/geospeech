@@ -3,35 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gravel Crew v1.7 - MASTER</title>
+    <title>Gravel Crew v1.8 - MASTER</title>
     <style>
         :root { --bg: #0a0a0a; --accent: #ff5500; --msg: #00ff41; --panel: #1a1a1a; }
         * { box-sizing: border-box; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 10px; 
+            text-align: center; 
+            height: 100svh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
         
         #header { display: flex; justify-content: space-between; padding: 5px; font-size: 0.8rem; color: #666; flex-shrink: 0; }
-        
-        #timer-display { font-family: monospace; font-size: 2.5rem; color: var(--accent); margin: 5px 0; font-weight: bold; flex-shrink: 0; }
+        #timer-display { font-family: monospace; font-size: 2.2rem; color: var(--accent); margin: 2px 0; font-weight: bold; flex-shrink: 0; }
 
-        #display-box { border: 2px solid var(--accent); border-radius: 15px; padding: 15px; background: #000; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
-        .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .note-text { font-size: 3.2rem; font-weight: 900; color: var(--msg); min-height: 100px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; line-height: 1; }
-        .dist-val { font-size: 5.5rem; font-weight: bold; line-height: 1; margin: 5px 0; font-variant-numeric: tabular-nums; }
+        /* CENTRAL DISPLAY BOX */
+        #display-box { 
+            border: 2px solid var(--accent); 
+            border-radius: 15px; 
+            padding: 10px; 
+            background: #000; 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; /* Contains the scrolling text */
+            margin-bottom: 10px;
+        }
+
+        .label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
         
-        #progress-container { background: #333; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        /* NOTE TEXT: Now shrinks font and scrolls if too long */
+        .note-text { 
+            font-size: 1.8rem; 
+            font-weight: 800; 
+            color: var(--msg); 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-transform: uppercase; 
+            line-height: 1.1; 
+            overflow-y: auto; 
+            padding: 5px;
+            margin: 5px 0;
+        }
+
+        .dist-val { font-size: 4.5rem; font-weight: bold; line-height: 1; color: white; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        
+        #progress-container { background: #333; height: 8px; border-radius: 4px; margin: 5px 0; overflow: hidden; flex-shrink: 0; }
         #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; }
 
-        .settings-panel { background: var(--panel); padding: 12px; border-radius: 10px; margin-bottom: 10px; text-align: left; flex-shrink: 0; }
-        .setting-row { margin-bottom: 8px; }
-        .setting-row label { display: block; font-size: 0.7rem; color: var(--accent); text-transform: uppercase; }
-        .val-label { float: right; color: #fff; }
-        input[type="range"] { width: 100%; height: 30px; accent-color: var(--accent); }
+        /* PINNED FOOTER CONTROLS */
+        .footer-controls { flex-shrink: 0; width: 100%; }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-shrink: 0; }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .settings-panel { background: var(--panel); padding: 10px; border-radius: 10px; margin-bottom: 8px; text-align: left; }
+        .setting-row { margin-bottom: 5px; }
+        .setting-row label { display: block; font-size: 0.65rem; color: var(--accent); text-transform: uppercase; }
+        .val-label { float: right; color: #fff; }
+        input[type="range"] { width: 100%; height: 25px; accent-color: var(--accent); margin: 0; }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 0.8rem; }
         .btn-load { background: #444; color: white; }
-        .btn-start { background: var(--msg); color: black; height: 70px; font-size: 1.4rem; grid-column: span 2; }
-        .btn-test { background: #222; color: #888; border: 1px solid #333; font-size: 0.7rem; margin-top: 5px; }
+        .btn-start { background: var(--msg); color: black; height: 60px; font-size: 1.2rem; grid-column: span 2; }
+        .btn-test { background: #222; color: #888; border: 1px solid #333; font-size: 0.65rem; margin-top: 4px; padding: 8px; }
         
         .acc-bad { color: #ff4444 !important; }
     </style>
@@ -47,29 +89,31 @@
 
     <div id="display-box">
         <div class="label">Next Note</div>
-        <div id="next-note" class="note-text">NO FILE</div>
-        <div class="label">Distance to Trigger</div>
+        <div id="next-note" class="note-text">NO FILE LOADED</div>
+        <div class="label">Meters to Trigger</div>
         <div id="dist-display" class="dist-val">--</div>
         <div id="progress-container"><div id="progress-bar"></div></div>
     </div>
 
-    <div class="settings-panel">
-        <div class="setting-row">
-            <label>Co-Driver Speed <span id="speed-val" class="val-label">1.4x</span></label>
-            <input type="range" id="rate-slider" min="0.8" max="2.2" step="0.1" value="1.4">
+    <div class="footer-controls">
+        <div class="settings-panel">
+            <div class="setting-row">
+                <label>Co-Driver Speed <span id="speed-val" class="val-label">1.4x</span></label>
+                <input type="range" id="rate-slider" min="0.8" max="2.2" step="0.1" value="1.4">
+            </div>
+            <div class="setting-row">
+                <label>Voice Pitch <span id="pitch-val" class="val-label">1.0</span></label>
+                <input type="range" id="pitch-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+            </div>
+            <button class="btn-test" onclick="testAudio()">🔊 Test Co-Driver Voice</button>
         </div>
-        <div class="setting-row">
-            <label>Voice Pitch <span id="pitch-val" class="val-label">1.0</span></label>
-            <input type="range" id="pitch-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-        </div>
-        <button class="btn-test" onclick="testAudio()">🔊 Test Voice</button>
-    </div>
 
-    <div class="btn-group">
-        <input type="file" id="file-input" accept=".json" style="display:none">
-        <button class="btn-load" onclick="document.getElementById('file-input').click()">Load Stage</button>
-        <button class="btn-load" style="background:#222" onclick="toggleFullscreen()">Fullscreen</button>
-        <button id="start-btn" class="btn-start" onclick="startStage()" disabled>Start Stage</button>
+        <div class="btn-group">
+            <input type="file" id="file-input" accept=".json" style="display:none">
+            <button class="btn-load" onclick="document.getElementById('file-input').click()">Load Stage</button>
+            <button class="btn-load" style="background:#222" onclick="toggleFullscreen()">Fullscreen</button>
+            <button id="start-btn" class="btn-start" onclick="startStage()" disabled>Start Stage</button>
+        </div>
     </div>
 
 <script>
@@ -84,7 +128,7 @@
     const R = 6371000;
     const synth = window.speechSynthesis;
 
-    // Load File
+    // Standard script logic remains the same to ensure GPS reliability
     document.getElementById('file-input').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -114,10 +158,8 @@
         const msg = new SpeechSynthesisUtterance(txt);
         msg.rate = document.getElementById('rate-slider').value;
         msg.pitch = document.getElementById('pitch-slider').value;
-        
         const voices = synth.getVoices();
-        msg.voice = voices.find(v => v.lang.includes('en-GB')) || voices[0];
-        
+        msg.voice = voices.find(v => v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en')) || voices[0];
         synth.speak(msg);
     }
 
@@ -154,12 +196,10 @@
                     document.getElementById('dist-display').innerText = Math.round(d);
                     
                     if (d < RADIUS || (d < CLOSE_ZONE && d > lastDist)) {
-                        // Start timer on first point
                         if (idx === 0 && !startTime) {
                             startTime = new Date().getTime();
                             timerInterval = setInterval(updateTimer, 100);
                         }
-                        
                         announce(stage[idx].note);
                         idx++;
                         lastDist = Infinity;
@@ -169,7 +209,7 @@
                     }
                 }
             } else {
-                clearInterval(timerInterval); // Stop timer at finish
+                clearInterval(timerInterval);
             }
         }, null, { enableHighAccuracy: true, maximumAge: 0 });
     }
@@ -186,7 +226,6 @@
         }
     }
 
-    // UI Label Updates
     document.getElementById('rate-slider').oninput = function() { document.getElementById('speed-val').innerText = this.value + "x"; };
     document.getElementById('pitch-slider').oninput = function() { document.getElementById('pitch-val').innerText = this.value; };
 </script>
