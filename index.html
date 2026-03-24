@@ -3,55 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gravel Crew v2.0 - DASH</title>
+    <title>Gravel Crew v2.3 - PRECISION</title>
     <style>
         :root { --bg: #0a0a0a; --accent: #ff5500; --msg: #00ff41; --panel: #1a1a1a; }
         * { box-sizing: border-box; }
-        
-        body { 
-            background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; 
-            text-align: center; height: 100svh; display: flex; flex-direction: column; overflow: hidden; 
-        }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
         
         #header { display: flex; justify-content: space-between; padding: 5px; font-size: 0.9rem; color: #888; flex-shrink: 0; }
-        
-        /* HUGE TIMER */
-        #timer-display { font-family: monospace; font-size: 4.5rem; color: var(--accent); font-weight: 900; flex-shrink: 0; margin: 5px 0; letter-spacing: -2px; }
+        #timer-display { font-family: monospace; font-size: 3.8rem; color: var(--accent); font-weight: 900; flex-shrink: 0; margin: 5px 0; }
 
-        #display-box { 
-            border: 3px solid #222; border-radius: 25px; background: #000; 
-            flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin-bottom: 15px; 
-            box-shadow: inset 0 0 20px rgba(0,255,65,0.05);
-        }
+        #display-box { border: 3px solid #222; border-radius: 20px; background: #000; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin-bottom: 10px; position: relative; }
+        
+        /* OFFSET CONTROLS overlayed on display */
+        .offset-controls { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
+        .btn-off { background: #333; color: white; border: 1px solid #444; padding: 15px 10px; border-radius: 10px; font-weight: bold; font-size: 1rem; width: 60px; }
+        .btn-off:active { background: var(--accent); }
 
-        .label { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
+        .label { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 2px; }
+        .dist-val { font-size: 8rem; font-weight: 900; line-height: 1; color: var(--msg); font-variant-numeric: tabular-nums; }
         
-        /* HUGE DISTANCE METRICS */
-        .dist-val { font-size: 9rem; font-weight: 900; line-height: 0.9; color: var(--msg); font-variant-numeric: tabular-nums; }
-        
-        #progress-container { background: #111; height: 12px; border-radius: 6px; margin: 15px 30px; overflow: hidden; border: 1px solid #333; }
-        #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--msg); }
+        #offset-label { font-size: 0.9rem; color: var(--accent); font-weight: bold; margin-top: 5px; }
+
+        #progress-container { background: #111; height: 10px; border-radius: 5px; margin: 10px 60px 10px 20px; overflow: hidden; border: 1px solid #333; }
+        #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; }
 
         .footer-controls { flex-shrink: 0; }
-        .settings-panel { background: var(--panel); padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: left; }
-        
-        input[type="range"] { width: 100%; height: 35px; accent-color: var(--accent); cursor: pointer; }
+        .settings-panel { background: var(--panel); padding: 12px; border-radius: 12px; margin-bottom: 10px; text-align: left; }
+        input[type="range"] { width: 100%; height: 35px; accent-color: var(--accent); }
 
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { padding: 16px; border-radius: 12px; border: none; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; transition: 0.1s; }
-        .btn-load { background: #222; color: #aaa; border: 1px solid #444; }
-        .btn-start { background: var(--msg); color: black; height: 75px; font-size: 1.6rem; grid-column: span 2; box-shadow: 0 4px 0 #008822; }
-        .btn-start:active { transform: translateY(4px); box-shadow: none; }
+        button { padding: 16px; border-radius: 10px; border: none; font-weight: bold; text-transform: uppercase; }
+        .btn-load { background: #333; color: white; }
+        .btn-start { background: var(--msg); color: black; height: 70px; font-size: 1.5rem; grid-column: span 2; }
         
-        .acc-bad { color: #ff4444 !important; animation: blink 0.8s infinite; }
-        @keyframes blink { 50% { opacity: 0.3; } }
+        .acc-bad { color: #ff4444 !important; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
     <div id="header">
         <span>GPS: <b id="acc">--</b>m</span>
-        <span id="point-info">POINT 0 / 0</span>
+        <span id="point-info">PT 0 / 0</span>
     </div>
 
     <div id="timer-display">00:00.0</div>
@@ -59,25 +52,29 @@
     <div id="display-box">
         <div class="label">Meters to Next</div>
         <div id="dist-display" class="dist-val">--</div>
+        <div id="offset-label">OFFSET: 0m</div>
         
+        <div class="offset-controls">
+            <button class="btn-off" onclick="adjustOffset(5)">+5m</button>
+            <button class="btn-off" onclick="adjustOffset(-5)">-5m</button>
+        </div>
+
         <div id="progress-container"><div id="progress-bar"></div></div>
-        <div id="status-text" style="color:#444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">System Idle</div>
     </div>
 
     <div class="footer-controls">
         <div class="settings-panel">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <label class="label" style="color:var(--accent)">Co-Driver Speed</label>
-                <span id="speed-label" style="font-weight:bold">1.4x</span>
+            <div style="display:flex; justify-content: space-between; font-size:0.7rem; color:var(--accent); margin-bottom:5px;">
+                <span>CO-DRIVER SPEED</span>
+                <span id="speed-label">1.4x</span>
             </div>
             <input type="range" id="rate-slider" min="1.0" max="2.2" step="0.1" value="1.4">
-            <button onclick="testAudio()" style="background:none; color:var(--accent); border:1px solid #333; width:100%; padding:8px; font-size:0.7rem; border-radius:8px; margin-top:5px;">🔊 PRIME & TEST VOICE</button>
         </div>
 
         <div class="btn-group">
             <input type="file" id="file-input" accept=".json" style="display:none">
-            <button class="btn-load" onclick="document.getElementById('file-input').click()">📁 LOAD JSON</button>
-            <button class="btn-load" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
+            <button class="btn-load" onclick="document.getElementById('file-input').click()">LOAD</button>
+            <button class="btn-load" onclick="toggleFullscreen()">FULL</button>
             <button id="start-btn" class="btn-start" onclick="startStage()" disabled>START STAGE</button>
         </div>
     </div>
@@ -85,21 +82,33 @@
 <script>
     let stage = [];
     let idx = 0;
-    let lastDist = Infinity;
+    let lastCoord = null;
+    let lastTime = null;
+    let currentKmh = 0;
     let startTime = null;
     let timerInterval = null;
-    const RADIUS = 35; 
-    const CLOSE_ZONE = 55;
+    let cooldownUntil = 0;
+    let manualOffset = 0; // The new adjustment variable
+
     const R = 6371000;
     const synth = window.speechSynthesis;
 
-    // Handle File Loading
+    // --- TUNING PARAMETERS ---
+    const BASE_TRIGGER = 35;     
+    const MAX_TRIGGER = 80;      
+    const SPEED_SENSITIVITY = 1.2;
+
+    function adjustOffset(val) {
+        manualOffset += val;
+        document.getElementById('offset-label').innerText = `OFFSET: ${manualOffset}m`;
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+    }
+
     document.getElementById('file-input').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
             stage = JSON.parse(event.target.result);
-            document.getElementById('point-info').innerText = `POINT 1 / ${stage.length}`;
-            document.getElementById('status-text').innerText = "STAGE LOADED - READY";
+            document.getElementById('point-info').innerText = `PT 1 / ${stage.length}`;
             document.getElementById('start-btn').disabled = false;
         };
         reader.readAsText(e.target.files[0]);
@@ -117,30 +126,17 @@
     }
 
     function announce(txt) {
-        if (synth.paused) synth.resume();
         if (synth.speaking) synth.cancel();
-        
         const msg = new SpeechSynthesisUtterance(txt);
         msg.rate = document.getElementById('rate-slider').value;
-        
         const voices = synth.getVoices();
-        // Xiaomi Priority: Look for Google High Quality (UK) then standard UK
-        const rallyVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en-GB')) || 
-                           voices.find(v => v.lang.includes('en-GB')) || 
-                           voices.find(v => v.lang.includes('en-US')) ||
-                           voices[0];
-        
-        if (rallyVoice) msg.voice = rallyVoice;
+        msg.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en-GB')) || voices[0];
         synth.speak(msg);
-    }
-
-    function testAudio() { 
-        announce("Co-driver active. System test: 5, 4, 3, 2, 1, Go!"); 
     }
 
     function updateTimer() {
         if (!startTime) return;
-        const diff = new Date().getTime() - startTime;
+        const diff = Date.now() - startTime;
         const mins = Math.floor(diff / 60000);
         const secs = Math.floor((diff % 60000) / 1000);
         const ms = Math.floor((diff % 1000) / 100);
@@ -149,43 +145,47 @@
 
     async function startStage() {
         idx = 0;
-        document.getElementById('start-btn').innerText = "TRACKING LIVE";
+        document.getElementById('start-btn').innerText = "LIVE";
         document.getElementById('start-btn').style.background = "#ffaa00";
-        document.getElementById('status-text').innerText = "AWAITING START LINE";
-        
         if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(()=>{});
 
         navigator.geolocation.watchPosition((pos) => {
             const { latitude: lat, longitude: lon, accuracy } = pos.coords;
-            const accEl = document.getElementById('acc');
-            accEl.innerText = accuracy.toFixed(1);
-            accEl.className = accuracy > 12 ? 'acc-bad' : '';
+            const now = Date.now();
+            document.getElementById('acc').innerText = accuracy.toFixed(1);
+            document.getElementById('acc').className = accuracy > 12 ? 'acc-bad' : '';
 
-            if (idx < stage.length) {
-                const target = stage[idx];
-                const d = getDist(lat, lon, target.lat, (target.lng || target.lon));
-                
+            if (lastCoord) {
+                const distMoved = getDist(lastCoord.lat, lastCoord.lon, lat, lon);
+                const timeDiff = (now - lastTime) / 1000;
+                if (timeDiff > 0) currentKmh = (distMoved / timeDiff) * 3.6;
+            }
+            lastCoord = { lat, lon };
+            lastTime = now;
+
+            if (idx < stage.length && now > cooldownUntil) {
+                const d = getDist(lat, lon, stage[idx].lat, (stage[idx].lng || stage[idx].lon));
                 if (!isNaN(d)) {
                     document.getElementById('dist-display').innerText = Math.round(d);
+
+                    // TRIGGER = (Base + Speed Component) + Manual Offset
+                    let triggerWindow = (BASE_TRIGGER + (currentKmh * SPEED_SENSITIVITY / 3.6)) + manualOffset;
                     
-                    // Logic: Trigger if within radius OR if we were close but distance is now increasing (passed it)
-                    if (d < RADIUS || (d < CLOSE_ZONE && d > lastDist)) {
+                    if (triggerWindow > MAX_TRIGGER) triggerWindow = MAX_TRIGGER;
+
+                    if (d < triggerWindow) {
                         if (idx === 0 && !startTime) {
-                            startTime = new Date().getTime();
+                            startTime = now;
                             timerInterval = setInterval(updateTimer, 100);
-                            document.getElementById('status-text').innerText = "STAGE IN PROGRESS";
                         }
                         announce(stage[idx].note);
                         idx++;
-                        lastDist = Infinity;
+                        cooldownUntil = now + 1200; 
                         updateUI();
-                    } else {
-                        lastDist = d;
                     }
                 }
-            } else {
+            } else if (idx >= stage.length) {
                 clearInterval(timerInterval);
-                document.getElementById('status-text').innerText = "FINISHED";
             }
         }, null, { enableHighAccuracy: true, maximumAge: 0 });
     }
@@ -193,16 +193,10 @@
     function updateUI() {
         const pct = (idx / stage.length) * 100;
         document.getElementById('progress-bar').style.width = pct + "%";
-        document.getElementById('point-info').innerText = `POINT ${Math.min(idx + 1, stage.length)} / ${stage.length}`;
+        document.getElementById('point-info').innerText = `PT ${Math.min(idx + 1, stage.length)} / ${stage.length}`;
     }
 
-    // UI Feedback
-    document.getElementById('rate-slider').oninput = function() { 
-        document.getElementById('speed-label').innerText = this.value + "x"; 
-    };
-    
-    // Initial voice load trigger for Chrome
-    window.speechSynthesis.getVoices();
+    document.getElementById('rate-slider').oninput = function() { document.getElementById('speed-label').innerText = this.value + "x"; };
 </script>
 </body>
 </html>
