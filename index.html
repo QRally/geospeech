@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gravel Crew v1.9 - DASH</title>
+    <title>Gravel Crew v2.0 - DASH</title>
     <style>
         :root { --bg: #0a0a0a; --accent: #ff5500; --msg: #00ff41; --panel: #1a1a1a; }
         * { box-sizing: border-box; }
@@ -16,34 +16,35 @@
         #header { display: flex; justify-content: space-between; padding: 5px; font-size: 0.9rem; color: #888; flex-shrink: 0; }
         
         /* HUGE TIMER */
-        #timer-display { font-family: monospace; font-size: 4rem; color: var(--accent); font-weight: 900; flex-shrink: 0; margin: 10px 0; }
+        #timer-display { font-family: monospace; font-size: 4.5rem; color: var(--accent); font-weight: 900; flex-shrink: 0; margin: 5px 0; letter-spacing: -2px; }
 
         #display-box { 
-            border: 3px solid #333; border-radius: 20px; background: #000; 
+            border: 3px solid #222; border-radius: 25px; background: #000; 
             flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin-bottom: 15px; 
+            box-shadow: inset 0 0 20px rgba(0,255,65,0.05);
         }
 
-        .label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+        .label { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
         
-        /* HUGE DISTANCE */
-        .dist-val { font-size: 8rem; font-weight: 900; line-height: 1; color: var(--msg); font-variant-numeric: tabular-nums; }
+        /* HUGE DISTANCE METRICS */
+        .dist-val { font-size: 9rem; font-weight: 900; line-height: 0.9; color: var(--msg); font-variant-numeric: tabular-nums; }
         
-        #progress-container { background: #222; height: 15px; border-radius: 10px; margin: 20px 40px; overflow: hidden; border: 1px solid #444; }
-        #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; }
+        #progress-container { background: #111; height: 12px; border-radius: 6px; margin: 15px 30px; overflow: hidden; border: 1px solid #333; }
+        #progress-bar { background: var(--msg); height: 100%; width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--msg); }
 
         .footer-controls { flex-shrink: 0; }
-        .settings-panel { background: var(--panel); padding: 12px; border-radius: 12px; margin-bottom: 10px; text-align: left; }
-        .setting-row { margin-bottom: 8px; }
-        .setting-row label { display: block; font-size: 0.7rem; color: var(--accent); }
-        input[type="range"] { width: 100%; height: 30px; accent-color: var(--accent); }
+        .settings-panel { background: var(--panel); padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: left; }
+        
+        input[type="range"] { width: 100%; height: 35px; accent-color: var(--accent); cursor: pointer; }
 
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { padding: 15px; border-radius: 10px; border: none; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
-        .btn-load { background: #333; color: white; }
-        .btn-start { background: var(--msg); color: black; height: 70px; font-size: 1.5rem; grid-column: span 2; }
+        button { padding: 16px; border-radius: 12px; border: none; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; transition: 0.1s; }
+        .btn-load { background: #222; color: #aaa; border: 1px solid #444; }
+        .btn-start { background: var(--msg); color: black; height: 75px; font-size: 1.6rem; grid-column: span 2; box-shadow: 0 4px 0 #008822; }
+        .btn-start:active { transform: translateY(4px); box-shadow: none; }
         
-        .acc-bad { color: #ff4444 !important; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
+        .acc-bad { color: #ff4444 !important; animation: blink 0.8s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
@@ -56,46 +57,43 @@
     <div id="timer-display">00:00.0</div>
 
     <div id="display-box">
-        <div class="label">Meters to Next Note</div>
+        <div class="label">Meters to Next</div>
         <div id="dist-display" class="dist-val">--</div>
         
         <div id="progress-container"><div id="progress-bar"></div></div>
-        <div id="status-text" style="color:#444; font-size: 0.7rem; text-transform: uppercase;">Awaiting Start</div>
+        <div id="status-text" style="color:#444; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">System Idle</div>
     </div>
 
     <div class="footer-controls">
         <div class="settings-panel">
-            <div class="setting-row">
-                <input type="range" id="rate-slider" min="0.8" max="2.2" step="0.1" value="1.4">
-                <div style="display:flex; justify-content: space-between; font-size:0.6rem; color:#888; margin-top:5px;">
-                    <span>SLOW CO-DRIVER</span>
-                    <span>FAST CO-DRIVER</span>
-                </div>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label class="label" style="color:var(--accent)">Co-Driver Speed</label>
+                <span id="speed-label" style="font-weight:bold">1.4x</span>
             </div>
-            <button onclick="testAudio()" style="background:none; color:var(--accent); border:1px solid var(--accent); width:100%; padding:5px; font-size:0.6rem; border-radius:5px;">🔊 TEST VOICE</button>
+            <input type="range" id="rate-slider" min="1.0" max="2.2" step="0.1" value="1.4">
+            <button onclick="testAudio()" style="background:none; color:var(--accent); border:1px solid #333; width:100%; padding:8px; font-size:0.7rem; border-radius:8px; margin-top:5px;">🔊 PRIME & TEST VOICE</button>
         </div>
 
         <div class="btn-group">
             <input type="file" id="file-input" accept=".json" style="display:none">
-            <button class="btn-load" onclick="document.getElementById('file-input').click()">📁 LOAD</button>
-            <button class="btn-load" onclick="toggleFullscreen()">⛶ FULL</button>
+            <button class="btn-load" onclick="document.getElementById('file-input').click()">📁 LOAD JSON</button>
+            <button class="btn-load" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
             <button id="start-btn" class="btn-start" onclick="startStage()" disabled>START STAGE</button>
         </div>
     </div>
 
 <script>
-    // Logic remains identical to v1.8 to ensure reliability, 
-    // but UI updates now target the new Dash elements.
     let stage = [];
     let idx = 0;
     let lastDist = Infinity;
     let startTime = null;
     let timerInterval = null;
     const RADIUS = 35; 
-    const CLOSE_ZONE = 50;
+    const CLOSE_ZONE = 55;
     const R = 6371000;
     const synth = window.speechSynthesis;
 
+    // Handle File Loading
     document.getElementById('file-input').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -119,15 +117,26 @@
     }
 
     function announce(txt) {
+        if (synth.paused) synth.resume();
         if (synth.speaking) synth.cancel();
+        
         const msg = new SpeechSynthesisUtterance(txt);
         msg.rate = document.getElementById('rate-slider').value;
+        
         const voices = synth.getVoices();
-        msg.voice = voices.find(v => v.lang.includes('en-GB')) || voices[0];
+        // Xiaomi Priority: Look for Google High Quality (UK) then standard UK
+        const rallyVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en-GB')) || 
+                           voices.find(v => v.lang.includes('en-GB')) || 
+                           voices.find(v => v.lang.includes('en-US')) ||
+                           voices[0];
+        
+        if (rallyVoice) msg.voice = rallyVoice;
         synth.speak(msg);
     }
 
-    function testAudio() { announce("Ready to start. 5, 4, 3, 2, 1, Go."); }
+    function testAudio() { 
+        announce("Co-driver active. System test: 5, 4, 3, 2, 1, Go!"); 
+    }
 
     function updateTimer() {
         if (!startTime) return;
@@ -140,9 +149,10 @@
 
     async function startStage() {
         idx = 0;
-        document.getElementById('start-btn').innerText = "STAGE LIVE";
+        document.getElementById('start-btn').innerText = "TRACKING LIVE";
         document.getElementById('start-btn').style.background = "#ffaa00";
-        document.getElementById('status-text').innerText = "DRIVE TO START LINE";
+        document.getElementById('status-text').innerText = "AWAITING START LINE";
+        
         if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(()=>{});
 
         navigator.geolocation.watchPosition((pos) => {
@@ -152,24 +162,30 @@
             accEl.className = accuracy > 12 ? 'acc-bad' : '';
 
             if (idx < stage.length) {
-                const d = getDist(lat, lon, stage[idx].lat, (stage[idx].lng || stage[idx].lon));
+                const target = stage[idx];
+                const d = getDist(lat, lon, target.lat, (target.lng || target.lon));
+                
                 if (!isNaN(d)) {
                     document.getElementById('dist-display').innerText = Math.round(d);
+                    
+                    // Logic: Trigger if within radius OR if we were close but distance is now increasing (passed it)
                     if (d < RADIUS || (d < CLOSE_ZONE && d > lastDist)) {
                         if (idx === 0 && !startTime) {
                             startTime = new Date().getTime();
                             timerInterval = setInterval(updateTimer, 100);
-                            document.getElementById('status-text').innerText = "RACING";
+                            document.getElementById('status-text').innerText = "STAGE IN PROGRESS";
                         }
                         announce(stage[idx].note);
                         idx++;
                         lastDist = Infinity;
                         updateUI();
-                    } else { lastDist = d; }
+                    } else {
+                        lastDist = d;
+                    }
                 }
             } else {
                 clearInterval(timerInterval);
-                document.getElementById('status-text').innerText = "STAGE FINISHED";
+                document.getElementById('status-text').innerText = "FINISHED";
             }
         }, null, { enableHighAccuracy: true, maximumAge: 0 });
     }
@@ -179,6 +195,14 @@
         document.getElementById('progress-bar').style.width = pct + "%";
         document.getElementById('point-info').innerText = `POINT ${Math.min(idx + 1, stage.length)} / ${stage.length}`;
     }
+
+    // UI Feedback
+    document.getElementById('rate-slider').oninput = function() { 
+        document.getElementById('speed-label').innerText = this.value + "x"; 
+    };
+    
+    // Initial voice load trigger for Chrome
+    window.speechSynthesis.getVoices();
 </script>
 </body>
 </html>
